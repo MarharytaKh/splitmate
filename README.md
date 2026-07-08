@@ -1,12 +1,10 @@
 # splitmate
 
-app for splitting expenses with friends
+App for splitting expenses with friends (work in progress)
 
-run: `cd backend && mvn spring-boot:run`
+## Run
 
-## endpoints (so far)
-- GET /api/groups
-- POST /api/groups
-- GET /api/groups/{id}
-- POST /api/groups/{id}/members
-- GET/POST /api/groups/{id}/expences
+```
+cd backend
+mvn spring-boot:run
+```

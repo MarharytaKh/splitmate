@@ -1,59 +1,90 @@
 package com.splitmate.service;
 
+import com.splitmate.controller.ExpenseRequest;
 import com.splitmate.model.Expense;
 import com.splitmate.model.Group;
 import com.splitmate.model.Member;
+import com.splitmate.repository.ExpenseRepository;
+import com.splitmate.repository.GroupRepository;
+import com.splitmate.repository.MemberRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-// TODO move this to a real database later, for now everything is in memory
 @Service
 public class GroupService {
 
-    private Map<Long, Group> groups = new HashMap<>();
-    private long nextId = 1;
+    // old version before db:
+    // private Map<Long, Group> groups = new HashMap<>();
+    // private long nextId = 1;
 
-    public Group createGroup(String name) {
-        Group group = new Group(nextId++, name);
-        groups.put(group.getId(), group);
-        return group;
+    private final GroupRepository groupRepository;
+    private final MemberRepository memberRepository;
+    private final ExpenseRepository expenseRepository;
+
+    public GroupService(GroupRepository groupRepository, MemberRepository memberRepository,
+                        ExpenseRepository expenseRepository) {
+        this.groupRepository = groupRepository;
+        this.memberRepository = memberRepository;
+        this.expenseRepository = expenseRepository;
     }
 
     public List<Group> getAllGroups() {
-        return new ArrayList<>(groups.values());
+        return groupRepository.findAll();
     }
 
     public Group getGroup(Long id) {
-        return groups.get(id);
+        return groupRepository.findById(id).orElse(null);
     }
 
+    public Group createGroup(String name) {
+        return groupRepository.save(new Group(name));
+    }
+
+    @Transactional
     public Member addMember(Long groupId, String name) {
-        Group group = groups.get(groupId);
-        Member member = new Member(nextId++, name);
-        group.getMembers().add(member);
-        return member;
+        Group group = getGroup(groupId);
+        if (group == null) {
+            return null;
+        }
+        Member member = new Member(name);
+        group.addMember(member);
+        return memberRepository.save(member);
     }
 
-    public Expense addExpense(Long groupId, String description, double amount, Long paidById, List<Long> participantIds) {
-        Group group = groups.get(groupId);
-
-        Member paidBy = null;
-        List<Member> participants = new ArrayList<>();
-        for (Member m : group.getMembers()) {
-            if (m.getId().equals(paidById)) {
-                paidBy = m;
-            }
-            if (participantIds.contains(m.getId())) {
-                participants.add(m);
-            }
+    @Transactional
+    public Expense addExpense(Long groupId, ExpenseRequest request) {
+        Group group = getGroup(groupId);
+        if (group == null) {
+            return null;
         }
 
-        Expense expense = new Expense(nextId++, description, amount, paidBy, participants);
-        group.getExpenses().add(expense);
-        return expense;
+        Member paidBy = memberRepository.findById(request.paidById).orElse(null);
+        List<Member> participants = new ArrayList<>();
+        for (Long id : request.participantIds) {
+            memberRepository.findById(id).ifPresent(participants::add);
+        }
+
+        Expense expense = new Expense(request.description, request.amount, paidBy, participants);
+        group.addExpense(expense);
+        System.out.println("added expense " + request.description + " " + request.amount);
+        return expenseRepository.save(expense);
+    }
+
+    @Transactional
+    public List<Expense> getExpenses(Long groupId) {
+        Group group = getGroup(groupId);
+        if (group == null) {
+            return new ArrayList<>();
+        }
+        group.getExpenses().forEach(e -> e.getParticipants().size()); // load lazy list
+        return group.getExpenses();
+    }
+
+    @Transactional
+    public void deleteExpense(Long expenseId) {
+        expenseRepository.deleteById(expenseId);
     }
 }

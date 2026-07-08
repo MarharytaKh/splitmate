@@ -6,7 +6,6 @@ import com.splitmate.model.Member;
 import com.splitmate.service.GroupService;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -25,7 +24,6 @@ public class GroupController {
         return groupService.getAllGroups();
     }
 
-    // TODO returns empty 200 when group doesnt exist, should be 404
     @GetMapping("/{id}")
     public Group getGroup(@PathVariable Long id) {
         return groupService.getGroup(id);
@@ -33,7 +31,6 @@ public class GroupController {
 
     @PostMapping
     public Group createGroup(@RequestBody Map<String, String> body) {
-        System.out.println("creating group: " + body);
         return groupService.createGroup(body.get("name"));
     }
 
@@ -42,22 +39,18 @@ public class GroupController {
         return groupService.addMember(id, body.get("name"));
     }
 
-    @GetMapping("/{id}/expences")
+    @GetMapping("/{id}/expenses")
     public List<Expense> getExpenses(@PathVariable Long id) {
-        return groupService.getGroup(id).getExpenses();
+        return groupService.getExpenses(id);
     }
 
-    @PostMapping("/{id}/expences")
-    public Expense addExpense(@PathVariable Long id, @RequestBody Map<String, Object> body) {
-        System.out.println(body);
-        String description = (String) body.get("description");
-        double amount = ((Number) body.get("amount")).doubleValue();
-        Long paidById = ((Number) body.get("paidById")).longValue();
+    @PostMapping("/{id}/expenses")
+    public Expense addExpense(@PathVariable Long id, @RequestBody ExpenseRequest request) {
+        return groupService.addExpense(id, request);
+    }
 
-        List<Long> participantIds = new ArrayList<>();
-        for (Object o : (List<?>) body.get("participantIds")) {
-            participantIds.add(((Number) o).longValue());
-        }
-        return groupService.addExpense(id, description, amount, paidById, participantIds);
+    @DeleteMapping("/{id}/expenses/{expenseId}")
+    public void deleteExpense(@PathVariable Long id, @PathVariable Long expenseId) {
+        groupService.deleteExpense(expenseId);
     }
 }
