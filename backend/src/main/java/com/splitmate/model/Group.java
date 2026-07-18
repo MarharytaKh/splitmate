@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "split_group") // "group" is reserved in sql!! spent an hour on this
+@Table(name = "split_group") // "group" and "groups" are reserved words in h2
 public class Group {
 
     @Id

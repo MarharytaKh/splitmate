@@ -53,4 +53,9 @@ public class GroupController {
     public void deleteExpense(@PathVariable Long id, @PathVariable Long expenseId) {
         groupService.deleteExpense(expenseId);
     }
+
+    @GetMapping("/{id}/balances")
+    public Map<String, Double> getBalances(@PathVariable Long id) {
+        return groupService.getBalances(id);
+    }
 }

@@ -11,24 +11,24 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class GroupService {
 
-    // old version before db:
-    // private Map<Long, Group> groups = new HashMap<>();
-    // private long nextId = 1;
-
     private final GroupRepository groupRepository;
     private final MemberRepository memberRepository;
     private final ExpenseRepository expenseRepository;
+    private final BalanceService balanceService;
 
     public GroupService(GroupRepository groupRepository, MemberRepository memberRepository,
-                        ExpenseRepository expenseRepository) {
+                        ExpenseRepository expenseRepository, BalanceService balanceService) {
         this.groupRepository = groupRepository;
         this.memberRepository = memberRepository;
         this.expenseRepository = expenseRepository;
+        this.balanceService = balanceService;
     }
 
     public List<Group> getAllGroups() {
@@ -86,5 +86,17 @@ public class GroupService {
     @Transactional
     public void deleteExpense(Long expenseId) {
         expenseRepository.deleteById(expenseId);
+    }
+
+    @Transactional
+    public Map<String, Double> getBalances(Long groupId) {
+        Group group = getGroup(groupId);
+        Map<Long, Double> balances = balanceService.calculateBalances(group.getMembers(), group.getExpenses());
+
+        Map<String, Double> result = new LinkedHashMap<>();
+        for (Member m : group.getMembers()) {
+            result.put(m.getName(), balances.get(m.getId()));
+        }
+        return result;
     }
 }
