@@ -4,6 +4,7 @@ import com.splitmate.model.Expense;
 import com.splitmate.model.Group;
 import com.splitmate.model.Member;
 import com.splitmate.service.GroupService;
+import com.splitmate.service.Transfer;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -55,7 +56,12 @@ public class GroupController {
     }
 
     @GetMapping("/{id}/balances")
-    public Map<String, Double> getBalances(@PathVariable Long id) {
+    public Map<String, Long> getBalances(@PathVariable Long id) {
         return groupService.getBalances(id);
+    }
+
+    @GetMapping("/{id}/settle-up")
+    public List<Transfer> settleUp(@PathVariable Long id) {
+        return groupService.getSettlement(id);
     }
 }

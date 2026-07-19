@@ -4,7 +4,7 @@ import java.util.List;
 
 public class ExpenseRequest {
     public String description;
-    public double amount;
+    public long amountCents;
     public Long paidById;
     public List<Long> participantIds;
 }

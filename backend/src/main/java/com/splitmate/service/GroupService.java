@@ -22,13 +22,16 @@ public class GroupService {
     private final MemberRepository memberRepository;
     private final ExpenseRepository expenseRepository;
     private final BalanceService balanceService;
+    private final SettleUpService settleUpService;
 
     public GroupService(GroupRepository groupRepository, MemberRepository memberRepository,
-                        ExpenseRepository expenseRepository, BalanceService balanceService) {
+                        ExpenseRepository expenseRepository, BalanceService balanceService,
+                        SettleUpService settleUpService) {
         this.groupRepository = groupRepository;
         this.memberRepository = memberRepository;
         this.expenseRepository = expenseRepository;
         this.balanceService = balanceService;
+        this.settleUpService = settleUpService;
     }
 
     public List<Group> getAllGroups() {
@@ -67,9 +70,9 @@ public class GroupService {
             memberRepository.findById(id).ifPresent(participants::add);
         }
 
-        Expense expense = new Expense(request.description, request.amount, paidBy, participants);
+        Expense expense = new Expense(request.description, request.amountCents, paidBy, participants);
         group.addExpense(expense);
-        System.out.println("added expense " + request.description + " " + request.amount);
+        System.out.println("added expense " + request.description + " " + request.amountCents);
         return expenseRepository.save(expense);
     }
 
@@ -89,14 +92,22 @@ public class GroupService {
     }
 
     @Transactional
-    public Map<String, Double> getBalances(Long groupId) {
+    public Map<String, Long> getBalances(Long groupId) {
         Group group = getGroup(groupId);
-        Map<Long, Double> balances = balanceService.calculateBalances(group.getMembers(), group.getExpenses());
+        Map<Long, Long> balances = balanceService.calculateBalances(group.getMembers(), group.getExpenses());
 
-        Map<String, Double> result = new LinkedHashMap<>();
+        Map<String, Long> result = new LinkedHashMap<>();
         for (Member m : group.getMembers()) {
             result.put(m.getName(), balances.get(m.getId()));
         }
         return result;
+    }
+
+    // TODO return names instead of ids, frontend will need them
+    @Transactional
+    public List<Transfer> getSettlement(Long groupId) {
+        Group group = getGroup(groupId);
+        Map<Long, Long> balances = balanceService.calculateBalances(group.getMembers(), group.getExpenses());
+        return settleUpService.settle(balances);
     }
 }

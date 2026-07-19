@@ -17,8 +17,10 @@ public class Expense {
     @Column(nullable = false)
     private String description;
 
+    // changed from double to long, now everything is in grosze (1 zl = 100)
+    // double gave me 33.333333 and sums that were off by 0.01
     @Column(nullable = false)
-    private double amount;
+    private long amountCents;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "paid_by_id")
@@ -43,9 +45,9 @@ public class Expense {
     public Expense() {
     }
 
-    public Expense(String description, double amount, Member paidBy, List<Member> participants) {
+    public Expense(String description, long amountCents, Member paidBy, List<Member> participants) {
         this.description = description;
-        this.amount = amount;
+        this.amountCents = amountCents;
         this.paidBy = paidBy;
         this.participants = new ArrayList<>(participants);
     }
@@ -66,12 +68,12 @@ public class Expense {
         this.description = description;
     }
 
-    public double getAmount() {
-        return amount;
+    public long getAmountCents() {
+        return amountCents;
     }
 
-    public void setAmount(double amount) {
-        this.amount = amount;
+    public void setAmountCents(long amountCents) {
+        this.amountCents = amountCents;
     }
 
     public Member getPaidBy() {
