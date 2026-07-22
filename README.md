@@ -1,6 +1,6 @@
 # splitmate
 
-App for splitting expenses with friends (work in progress)
+App for splitting expenses with friends (backend for now, frontend coming).
 
 ## Run
 
@@ -9,5 +9,14 @@ cd backend
 mvn spring-boot:run
 ```
 
-## Settle up
-Greedy algorithm with two priority queues - biggest debtor pays biggest creditor until everyone is 0.
+API is on http://localhost:8080/api/groups
+
+## Endpoints
+- GET /api/groups
+- POST /api/groups
+- GET /api/groups/{id}
+- POST /api/groups/{id}/members
+- GET/POST /api/groups/{id}/expenses
+- DELETE /api/groups/{id}/expenses/{expenseId}
+- GET /api/groups/{id}/balances
+- GET /api/groups/{id}/settle-up

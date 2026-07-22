@@ -1,6 +1,8 @@
 package com.splitmate.service;
 
-import com.splitmate.controller.ExpenseRequest;
+import com.splitmate.dto.*;
+import com.splitmate.exception.BadRequestException;
+import com.splitmate.exception.NotFoundException;
 import com.splitmate.model.Expense;
 import com.splitmate.model.Group;
 import com.splitmate.model.Member;
@@ -11,9 +13,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class GroupService {
@@ -34,80 +37,100 @@ public class GroupService {
         this.settleUpService = settleUpService;
     }
 
-    public List<Group> getAllGroups() {
-        return groupRepository.findAll();
+    @Transactional(readOnly = true)
+    public List<GroupDto> getAllGroups() {
+        return groupRepository.findAll().stream().map(GroupDto::from).toList();
     }
 
-    public Group getGroup(Long id) {
-        return groupRepository.findById(id).orElse(null);
-    }
-
-    public Group createGroup(String name) {
-        return groupRepository.save(new Group(name));
+    @Transactional(readOnly = true)
+    public GroupDto getGroup(Long id) {
+        return GroupDto.from(findGroup(id));
     }
 
     @Transactional
-    public Member addMember(Long groupId, String name) {
-        Group group = getGroup(groupId);
-        if (group == null) {
-            return null;
+    public GroupDto createGroup(CreateGroupRequest request) {
+        Group group = new Group(request.name().trim());
+        return GroupDto.from(groupRepository.save(group));
+    }
+
+    @Transactional
+    public MemberDto addMember(Long groupId, AddMemberRequest request) {
+        Group group = findGroup(groupId);
+        String name = request.name().trim();
+
+        boolean taken = group.getMembers().stream().anyMatch(m -> m.getName().equalsIgnoreCase(name));
+        if (taken) {
+            throw new BadRequestException(name + " is already in this group");
         }
+
         Member member = new Member(name);
         group.addMember(member);
-        return memberRepository.save(member);
+        return MemberDto.from(memberRepository.save(member));
+    }
+
+    @Transactional(readOnly = true)
+    public List<ExpenseDto> getExpenses(Long groupId) {
+        return findGroup(groupId).getExpenses().stream().map(ExpenseDto::from).toList();
     }
 
     @Transactional
-    public Expense addExpense(Long groupId, ExpenseRequest request) {
-        Group group = getGroup(groupId);
-        if (group == null) {
-            return null;
+    public ExpenseDto addExpense(Long groupId, CreateExpenseRequest request) {
+        Group group = findGroup(groupId);
+        Map<Long, Member> membersById = group.getMembers().stream()
+                .collect(Collectors.toMap(Member::getId, Function.identity()));
+
+        Member paidBy = membersById.get(request.paidById());
+        if (paidBy == null) {
+            throw new BadRequestException("person who paid is not in this group");
         }
 
-        Member paidBy = memberRepository.findById(request.paidById).orElse(null);
         List<Member> participants = new ArrayList<>();
-        for (Long id : request.participantIds) {
-            memberRepository.findById(id).ifPresent(participants::add);
+        for (Long id : request.participantIds().stream().distinct().toList()) {
+            Member m = membersById.get(id);
+            if (m == null) {
+                throw new BadRequestException("member " + id + " is not in this group");
+            }
+            participants.add(m);
         }
 
-        Expense expense = new Expense(request.description, request.amountCents, paidBy, participants);
+        Expense expense = new Expense(request.description().trim(), request.amountCents(), paidBy, participants);
         group.addExpense(expense);
-        System.out.println("added expense " + request.description + " " + request.amountCents);
-        return expenseRepository.save(expense);
+        return ExpenseDto.from(expenseRepository.save(expense));
     }
 
     @Transactional
-    public List<Expense> getExpenses(Long groupId) {
-        Group group = getGroup(groupId);
-        if (group == null) {
-            return new ArrayList<>();
-        }
-        group.getExpenses().forEach(e -> e.getParticipants().size()); // load lazy list
-        return group.getExpenses();
+    public void deleteExpense(Long groupId, Long expenseId) {
+        Group group = findGroup(groupId);
+        Expense expense = expenseRepository.findById(expenseId)
+                .filter(e -> e.getGroup().getId().equals(groupId))
+                .orElseThrow(() -> new NotFoundException("expense " + expenseId + " not found"));
+        group.getExpenses().remove(expense);
     }
 
-    @Transactional
-    public void deleteExpense(Long expenseId) {
-        expenseRepository.deleteById(expenseId);
-    }
-
-    @Transactional
-    public Map<String, Long> getBalances(Long groupId) {
-        Group group = getGroup(groupId);
+    @Transactional(readOnly = true)
+    public List<BalanceDto> getBalances(Long groupId) {
+        Group group = findGroup(groupId);
         Map<Long, Long> balances = balanceService.calculateBalances(group.getMembers(), group.getExpenses());
 
-        Map<String, Long> result = new LinkedHashMap<>();
-        for (Member m : group.getMembers()) {
-            result.put(m.getName(), balances.get(m.getId()));
-        }
-        return result;
+        return group.getMembers().stream()
+                .map(m -> new BalanceDto(m.getId(), m.getName(), balances.get(m.getId())))
+                .toList();
     }
 
-    // TODO return names instead of ids, frontend will need them
-    @Transactional
-    public List<Transfer> getSettlement(Long groupId) {
-        Group group = getGroup(groupId);
+    @Transactional(readOnly = true)
+    public List<TransferDto> getSettlement(Long groupId) {
+        Group group = findGroup(groupId);
         Map<Long, Long> balances = balanceService.calculateBalances(group.getMembers(), group.getExpenses());
-        return settleUpService.settle(balances);
+        Map<Long, MemberDto> members = group.getMembers().stream()
+                .collect(Collectors.toMap(Member::getId, MemberDto::from));
+
+        return settleUpService.settle(balances).stream()
+                .map(t -> new TransferDto(members.get(t.fromId()), members.get(t.toId()), t.amountCents()))
+                .toList();
+    }
+
+    private Group findGroup(Long id) {
+        return groupRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("group " + id + " not found"));
     }
 }

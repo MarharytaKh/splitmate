@@ -1,6 +1,5 @@
 package com.splitmate.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
@@ -24,7 +23,6 @@ public class Group {
     @OrderBy("id")
     private List<Member> members = new ArrayList<>();
 
-    @JsonIgnore // expenses have their own endpoint
     @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("createdAt DESC")
     private List<Expense> expenses = new ArrayList<>();

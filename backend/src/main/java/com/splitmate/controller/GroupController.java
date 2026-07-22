@@ -1,14 +1,12 @@
 package com.splitmate.controller;
 
-import com.splitmate.model.Expense;
-import com.splitmate.model.Group;
-import com.splitmate.model.Member;
+import com.splitmate.dto.*;
 import com.splitmate.service.GroupService;
-import com.splitmate.service.Transfer;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/groups")
@@ -21,47 +19,51 @@ public class GroupController {
     }
 
     @GetMapping
-    public List<Group> getGroups() {
+    public List<GroupDto> getGroups() {
         return groupService.getAllGroups();
     }
 
     @GetMapping("/{id}")
-    public Group getGroup(@PathVariable Long id) {
+    public GroupDto getGroup(@PathVariable Long id) {
         return groupService.getGroup(id);
     }
 
     @PostMapping
-    public Group createGroup(@RequestBody Map<String, String> body) {
-        return groupService.createGroup(body.get("name"));
+    @ResponseStatus(HttpStatus.CREATED)
+    public GroupDto createGroup(@Valid @RequestBody CreateGroupRequest request) {
+        return groupService.createGroup(request);
     }
 
     @PostMapping("/{id}/members")
-    public Member addMember(@PathVariable Long id, @RequestBody Map<String, String> body) {
-        return groupService.addMember(id, body.get("name"));
+    @ResponseStatus(HttpStatus.CREATED)
+    public MemberDto addMember(@PathVariable Long id, @Valid @RequestBody AddMemberRequest request) {
+        return groupService.addMember(id, request);
     }
 
     @GetMapping("/{id}/expenses")
-    public List<Expense> getExpenses(@PathVariable Long id) {
+    public List<ExpenseDto> getExpenses(@PathVariable Long id) {
         return groupService.getExpenses(id);
     }
 
     @PostMapping("/{id}/expenses")
-    public Expense addExpense(@PathVariable Long id, @RequestBody ExpenseRequest request) {
+    @ResponseStatus(HttpStatus.CREATED)
+    public ExpenseDto addExpense(@PathVariable Long id, @Valid @RequestBody CreateExpenseRequest request) {
         return groupService.addExpense(id, request);
     }
 
     @DeleteMapping("/{id}/expenses/{expenseId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteExpense(@PathVariable Long id, @PathVariable Long expenseId) {
-        groupService.deleteExpense(expenseId);
+        groupService.deleteExpense(id, expenseId);
     }
 
     @GetMapping("/{id}/balances")
-    public Map<String, Long> getBalances(@PathVariable Long id) {
+    public List<BalanceDto> getBalances(@PathVariable Long id) {
         return groupService.getBalances(id);
     }
 
     @GetMapping("/{id}/settle-up")
-    public List<Transfer> settleUp(@PathVariable Long id) {
+    public List<TransferDto> settleUp(@PathVariable Long id) {
         return groupService.getSettlement(id);
     }
 }

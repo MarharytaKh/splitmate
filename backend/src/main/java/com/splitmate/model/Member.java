@@ -1,6 +1,5 @@
 package com.splitmate.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 @Entity
@@ -13,8 +12,7 @@ public class Member {
     @Column(nullable = false)
     private String name;
 
-    @JsonIgnore // without this json goes infinite: group -> members -> group -> ...
-    @ManyToOne(optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "group_id")
     private Group group;
 

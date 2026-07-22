@@ -1,6 +1,5 @@
 package com.splitmate.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
@@ -17,8 +16,7 @@ public class Expense {
     @Column(nullable = false)
     private String description;
 
-    // changed from double to long, now everything is in grosze (1 zl = 100)
-    // double gave me 33.333333 and sums that were off by 0.01
+    // money is stored in grosze (1 zł = 100) so we dont get 0.1 + 0.2 problems
     @Column(nullable = false)
     private long amountCents;
 
@@ -35,8 +33,7 @@ public class Expense {
     @OrderBy("id")
     private List<Member> participants = new ArrayList<>();
 
-    @JsonIgnore
-    @ManyToOne(optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "group_id")
     private Group group;
 
