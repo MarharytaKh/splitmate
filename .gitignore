@@ -1,4 +1,14 @@
+# java
 backend/target/
+*.class
+*.log
+
+# node
+frontend/node_modules/
+frontend/dist/
+
+# ide
 .idea/
 *.iml
+.vscode/
 .DS_Store

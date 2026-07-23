@@ -14,7 +14,7 @@ class BalanceServiceTest {
     private final BalanceService service = new BalanceService();
 
     private Member member(long id, String name) {
-        Member m = new Member(name);
+        Member m = new Member(name, 1);
         m.setId(id);
         return m;
     }

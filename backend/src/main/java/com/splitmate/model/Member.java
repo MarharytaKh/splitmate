@@ -12,6 +12,9 @@ public class Member {
     @Column(nullable = false)
     private String name;
 
+    // number of the picture in /avatars (1-10)
+    private int avatar = 1;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "group_id")
     private Group group;
@@ -19,8 +22,9 @@ public class Member {
     public Member() {
     }
 
-    public Member(String name) {
+    public Member(String name, int avatar) {
         this.name = name;
+        this.avatar = avatar;
     }
 
     public Long getId() {
@@ -37,6 +41,14 @@ public class Member {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public int getAvatar() {
+        return avatar;
+    }
+
+    public void setAvatar(int avatar) {
+        this.avatar = avatar;
     }
 
     public Group getGroup() {

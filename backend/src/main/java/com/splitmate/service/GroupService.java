@@ -63,7 +63,7 @@ public class GroupService {
             throw new BadRequestException(name + " is already in this group");
         }
 
-        Member member = new Member(name);
+        Member member = new Member(name, request.avatar());
         group.addMember(member);
         return MemberDto.from(memberRepository.save(member));
     }
@@ -113,7 +113,7 @@ public class GroupService {
         Map<Long, Long> balances = balanceService.calculateBalances(group.getMembers(), group.getExpenses());
 
         return group.getMembers().stream()
-                .map(m -> new BalanceDto(m.getId(), m.getName(), balances.get(m.getId())))
+                .map(m -> new BalanceDto(m.getId(), m.getName(), m.getAvatar(), balances.get(m.getId())))
                 .toList();
     }
 
