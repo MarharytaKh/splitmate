@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { addExpense } from '../api'
+import { formatMoney, parseMoney } from '../utils/money'
 
 function ExpenseForm({ groupId, members, onAdded }) {
   const [description, setDescription] = useState('')
@@ -7,6 +8,11 @@ function ExpenseForm({ groupId, members, onAdded }) {
   const [paidById, setPaidById] = useState(members[0].id)
   const [participantIds, setParticipantIds] = useState(members.map((m) => m.id))
   const [error, setError] = useState('')
+
+  // new person joined -> include them by default
+  useEffect(() => {
+    setParticipantIds(members.map((m) => m.id))
+  }, [members.length])
 
   function toggleParticipant(id) {
     if (participantIds.includes(id)) {
@@ -20,10 +26,16 @@ function ExpenseForm({ groupId, members, onAdded }) {
     e.preventDefault()
     setError('')
 
+    const amountCents = parseMoney(amount)
+    if (!amountCents || amountCents <= 0) {
+      setError('Enter a valid amount')
+      return
+    }
+
     try {
       await addExpense(groupId, {
         description,
-        amountCents: parseFloat(amount) * 100,
+        amountCents,
         paidById: Number(paidById),
         participantIds,
       })
@@ -34,6 +46,9 @@ function ExpenseForm({ groupId, members, onAdded }) {
       setError(err.message)
     }
   }
+
+  const preview = parseMoney(amount)
+  const perPerson = participantIds.length > 0 && preview > 0 ? preview / participantIds.length : 0
 
   return (
     <form className="card expense-form" onSubmit={handleSubmit}>
@@ -50,6 +65,7 @@ function ExpenseForm({ groupId, members, onAdded }) {
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           placeholder="0.00"
+          inputMode="decimal"
         />
       </div>
 
@@ -78,7 +94,9 @@ function ExpenseForm({ groupId, members, onAdded }) {
       </div>
 
       <div className="form-bottom">
-        <span></span>
+        <span className="muted">
+          {perPerson > 0 ? `≈ ${formatMoney(Math.round(perPerson))} each` : ''}
+        </span>
         <button className="btn" type="submit">Add expense</button>
       </div>
       {error && <p className="error">{error}</p>}

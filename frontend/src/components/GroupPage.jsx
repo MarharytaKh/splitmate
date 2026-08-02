@@ -26,7 +26,6 @@ function GroupPage({ groupId, onBack }) {
     loadAll()
   }, [groupId])
 
-  // TODO reloads everything after every change, maybe too many requests?
   async function loadAll() {
     try {
       const [g, e, b, t] = await Promise.all([
@@ -69,7 +68,7 @@ function GroupPage({ groupId, onBack }) {
         </div>
 
         <MemberList members={group.members} />
-        <AddMemberForm groupId={groupId} onAdded={loadAll} />
+        <AddMemberForm groupId={groupId} members={group.members} onAdded={loadAll} />
       </div>
 
       {error && <p className="error">{error}</p>}
@@ -99,7 +98,7 @@ function GroupPage({ groupId, onBack }) {
 
       {tab === 'balances' && <Balances balances={balances} />}
 
-      {tab === 'settle' && <SettleUp transfers={transfers} />}
+      {tab === 'settle' && <SettleUp transfers={transfers} members={group.members} />}
     </section>
   )
 }

@@ -3,11 +3,19 @@ import { addMember } from '../api'
 
 const AVATARS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-function AddMemberForm({ groupId, onAdded }) {
+function AddMemberForm({ groupId, members, onAdded }) {
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
   const [avatar, setAvatar] = useState(1)
   const [error, setError] = useState('')
+
+  function openForm() {
+    // pick the first avatar nobody in the group has yet
+    const used = members.map((m) => m.avatar)
+    const free = AVATARS.find((a) => !used.includes(a))
+    setAvatar(free || 1)
+    setOpen(true)
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -24,7 +32,7 @@ function AddMemberForm({ groupId, onAdded }) {
 
   if (!open) {
     return (
-      <button className="btn btn-outline" onClick={() => setOpen(true)}>+ Add person</button>
+      <button className="btn btn-outline" onClick={openForm}>+ Add person</button>
     )
   }
 

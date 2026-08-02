@@ -10,7 +10,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/groups")
-@CrossOrigin(origins = "http://localhost:5173") // react dev server, without this browser blocks requests
 public class GroupController {
 
     private final GroupService groupService;
