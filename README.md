@@ -38,6 +38,18 @@ but for a group of friends it works really well.
 
 Code: `backend/src/main/java/com/splitmate/service/SettleUpService.java`
 
+## How I used AI
+
+I built this project with **Claude Code**. I used it for:
+
+- **debugging**: I pasted errors (infinite JSON recursion, H2 reserved word problem)
+  and asked *why* it happens, not only for a fix
+- **the algorithm**: I asked about ways to turn balances into transfers and chose the greedy
+  approach with two priority queues because it's simple and fast enough
+- **tests**: asking for edge cases I didn't think about (like 10 zł split between 3 people)
+
+What I learned: AI is fast, but you still need to understand the code. Every suggestion
+has to be checked, because "it compiles" doesn't mean "it's correct".
 ## Running locally
 
 Backend (uses H2 in memory by default, data is lost on restart):
