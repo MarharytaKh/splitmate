@@ -1,0 +1,55 @@
+stages:
+  - test
+  - build
+
+variables:
+  MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
+  MAVEN_CLI_OPTS: "-B --no-transfer-progress"
+
+backend-test:
+  stage: test
+  image: maven:3.9-eclipse-temurin-21
+  cache:
+    key: maven-$CI_COMMIT_REF_SLUG
+    paths:
+      - .m2/repository
+  script:
+    - cd backend
+    - mvn $MAVEN_CLI_OPTS test
+  artifacts:
+    when: always
+    reports:
+      junit: backend/target/surefire-reports/TEST-*.xml
+
+backend-package:
+  stage: build
+  image: maven:3.9-eclipse-temurin-21
+  needs: [ backend-test ]
+  cache:
+    key: maven-$CI_COMMIT_REF_SLUG
+    paths:
+      - .m2/repository
+    policy: pull
+  script:
+    - cd backend
+    - mvn $MAVEN_CLI_OPTS package -DskipTests
+  artifacts:
+    paths:
+      - backend/target/*.jar
+    expire_in: 1 week
+
+frontend-build:
+  stage: build
+  image: node:22
+  cache:
+    key: npm-$CI_COMMIT_REF_SLUG
+    paths:
+      - .npm/
+  script:
+    - cd frontend
+    - npm install --cache $CI_PROJECT_DIR/.npm --prefer-offline
+    - npm run build
+  artifacts:
+    paths:
+      - frontend/dist/
+    expire_in: 1 week
